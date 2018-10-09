@@ -3,16 +3,16 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-public class NonpreemptiveHighestPriorityFirstNoAging extends Scheduler 
+public class NonpreemptiveHighestPriorityFirstNoAging extends Util
 {    
     @Override
-    public Queue<Process> schedule(PriorityQueue<Process> priorityQueue)
+    public Queue<Process> util(PriorityQueue<Process> priorityQueue)
     {
         int finishTime = 0;
         int startTime;
         Process process;
         Process scheduled;
-        Scheduler.Stats stats = this.getStats();
+        Util.Stats stats = this.getStats();
         Queue<Process> scheduledQueue = new LinkedList<>();
 
         PriorityQueue<Process> readyQueue = createReadyQueue();
@@ -34,7 +34,7 @@ public class NonpreemptiveHighestPriorityFirstNoAging extends Scheduler
         }        
         stats.addQuanta(finishTime);
         printTimeChart(scheduledQueue);
-        printRoundAvgStats();
+        printRoundAvg();
         stats.nextRound();
         
         return scheduledQueue;

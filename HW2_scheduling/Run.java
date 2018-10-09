@@ -1,27 +1,28 @@
 import java.util.ArrayList;
-import java.util.List;
 import java.util.PriorityQueue;
 
-public class Main
+public class Run
 {
-    private static final int SIMULATION_RUNS = 5;
-    private static final int MAX_PROCESSES_PER_RUN = 20;
-    private static final int ALGORITHM_COUNT = 6;
+    private static final int RUNS_TIME = 5;
+    private static final int RUN_MAX = 20;
+    private static final int COUNT_ALGORITHM = 8;
     
     public static void main(String[] args) throws CloneNotSupportedException 
     {
         // Create different scheduling algorithms
-        Scheduler fcfs = new FirstComeFirstServed();
-        Scheduler sjf = new ShortestJobFirst();
-        Scheduler srt = new ShortestRemainingTime();
-        Scheduler rr = new RoundRobin();
-        Scheduler nhpf = new NonpreemptiveHighestPriorityFirstNoAging();
-        Scheduler phpf = new PreemptiveHighestPriorityFirstNoAging();
+        Util fcfs = new FirstComeFirstServed();
+        Util sjf = new ShortestJobFirst();
+        Util srt = new ShortestRemainingTime();
+        Util rr = new RoundRobin();
+        Util nhpf = new NonpreemptiveHighestPriorityFirstNoAging();
+        Util phpf = new PreemptiveHighestPriorityFirstNoAging();
+        Util nhpfa = new NonpreemptiveHighestPriorityFirstAging();
+        Util phpfa = new PreemptiveHighestPriorityFirstAging();
 
-        PriorityQueue<Process>[] q = new PriorityQueue[ALGORITHM_COUNT + 1];
+        PriorityQueue<Process>[] priorityQueues = new PriorityQueue[COUNT_ALGORITHM + 1];
         
         // Test each scheduling algorithm SIMULATION_RUNS times
-        for (int i = 0; i < SIMULATION_RUNS; ++i)
+        for (int i = 0; i < RUNS_TIME; ++i)
         {
             System.out.println("\n****************************************************************\n");
 
@@ -30,32 +31,38 @@ public class Main
             System.out.println("---------------------------");
             
             //generate a new process queue for this testing round then duplicate it
-            q[0] = ProcessFactory.generateProcesses(MAX_PROCESSES_PER_RUN);
-            for (int j = 1; j < ALGORITHM_COUNT + 1; ++j)
-                q[j] = copyQueue(q[0]);
+            priorityQueues[0] = ProcessFactory.generateProcesses(RUN_MAX);
+            for (int j = 1; j < COUNT_ALGORITHM + 1; ++j)
+                priorityQueues[j] = copyQueue(priorityQueues[0]);
             
             // Print the process list by ascending arrival time   
-            while (!q[ALGORITHM_COUNT].isEmpty())
-                System.out.println(q[ALGORITHM_COUNT].poll());
+            while (!priorityQueues[COUNT_ALGORITHM].isEmpty())
+                System.out.println(priorityQueues[COUNT_ALGORITHM].poll());
                         
             // Run each algorithm and show the results
             System.out.println("\nFirst Come First Served");
-            fcfs.schedule(q[0]);
+            fcfs.util(priorityQueues[0]);
 
             System.out.println("\nShortest Job First");
-            sjf.schedule(q[1]);
+            sjf.util(priorityQueues[1]);
             
             System.out.println("\nShortest Remaining Time");
-            srt.schedule(q[2]);
+            srt.util(priorityQueues[2]);
 
             System.out.println("\nRound Robin");
-            rr.schedule(q[3]);
+            rr.util(priorityQueues[3]);
 
             System.out.println("\nNon-Preemptive Highest Priority First");
-            nhpf.schedule(q[4]);
+            nhpf.util(priorityQueues[4]);
             
             System.out.println("\nPreemptive Highest Priority First  (RR switching between same priority processes)");
-            phpf.schedule(q[5]);
+            phpf.util(priorityQueues[5]);
+
+            System.out.println("\n*******(Bonus)********* Non-Preemptive Highest Priority First with Aging");
+            nhpfa.util(priorityQueues[6]);
+
+            System.out.println("\n*******(Bonus)********* Preemptive Highest Priority First with Aging");
+            phpfa.util(priorityQueues[7]);
 
         }
         System.out.println("\n-------------------------------------------");
@@ -79,6 +86,12 @@ public class Main
 
         System.out.println("\nPreemptive Highest Priority First  (RR switching between same priority processes)");
         phpf.printAvgStats();
+
+        System.out.println("\n*******(Bonus)********* Non-Preemptive Highest Priority First with Aging");
+        nhpfa.printAvgStats();
+
+        System.out.println("\n*******(Bonus)********* Preemptive Highest Priority First with Aging");
+        phpfa.printAvgStats();
     }
     
     private static PriorityQueue<Process> copyQueue(PriorityQueue<Process> q) throws CloneNotSupportedException

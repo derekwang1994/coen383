@@ -1,15 +1,10 @@
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-/**
- * An object representing a scheduling algorithm which schedules a process queue
- * @author Michael Riha
- */
-public abstract class Scheduler 
+public abstract class Util
 {
     private Stats stats = new Stats();
-    
-    /* Keep track of various time and throughput statistics */ 
+
     public class Stats 
     {
         private int turnaroundTime;
@@ -105,10 +100,7 @@ public abstract class Scheduler
     }
     
     public Stats getStats() { return this.stats; }
-    
-    /**
-     * Print out the average statistics for the given scheduling algorithm
-     */
+
     public void printAvgStats()
     {
         System.out.format("    Turnaround time: %f\n", stats.getAvgTurnaroundTime());
@@ -116,28 +108,21 @@ public abstract class Scheduler
         System.out.format("    Response time: %f\n", stats.getAvgResponseTime());
         System.out.format("    Throughput per 100 quanta: %f\n", stats.getAvgThroughput());
     }
-    
-    /**
-     * Print out the average statistics for the current round  only
-     */
-    public void printRoundAvgStats()
+
+    public void printRoundAvg()
     {
         System.out.format("    Turnaround: %-2.3f Waiting: %-2.3f Response: %-2.3f Throughput: %-2.3f\n", 
                 stats.getRoundAvgTurnaroundTime(), stats.getRoundAvgWaitingTime(), 
                 stats.getRoundAvgResponseTime(),  stats.getRoundAvgThroughput());
     }
-    
-    /**
-     * Print a "time chart" of the results, e.g. ABCDABCD...
-     * @param results A list of Processes that have been scheduled
-     */
+
     public static void printTimeChart(Queue<Process> q)
     {
         int quanta = 0;
         System.out.print("    ");
         for (Process p : q)
         {
-            while (quanta++ < p.getStartTime()) // show idle time
+            while (quanta++ < p.getStartTime())
                 System.out.print("_");
             quanta = p.getStartTime() + p.getBurstTime();
             
@@ -146,10 +131,6 @@ public abstract class Scheduler
         }
         System.out.println();
     }
-    /**
-     * Go through the process queue (sorted by arrival time) 
-     * and create a new process queue using the selected scheduling algorithm
-     * @return A scheduled process queue
-     */
-    public abstract Queue<Process> schedule(PriorityQueue<Process> q);
+
+    public abstract Queue<Process> util(PriorityQueue<Process> q);
 }

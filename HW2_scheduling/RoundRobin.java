@@ -7,14 +7,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-public class RoundRobin extends Scheduler 
+public class RoundRobin extends Util
 {    
     @Override
-    public Queue<Process> schedule(PriorityQueue<Process> q) 
+    public Queue<Process> util(PriorityQueue<Process> q)
     {
         int startTime, finishTime = 0;
         Process p, scheduled, remaining;
-        Scheduler.Stats stats = this.getStats();
+        Util.Stats stats = this.getStats();
            
         Map<Character, Integer> startTimes = new HashMap<>();        
         Map<Character, Integer> finishTimes = new HashMap<>();
@@ -77,7 +77,7 @@ public class RoundRobin extends Scheduler
         }        
         stats.addQuanta(finishTime);
         printTimeChart(scheduledQueue);
-        printRoundAvgStats();
+        printRoundAvg();
         stats.nextRound();
         
         return scheduledQueue;

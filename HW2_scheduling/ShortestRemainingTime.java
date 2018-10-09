@@ -7,17 +7,17 @@ import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ShortestRemainingTime extends Scheduler 
+public class ShortestRemainingTime extends Util
 {    
     @Override
-    public Queue<Process> schedule(PriorityQueue<Process> q) 
+    public Queue<Process> util(PriorityQueue<Process> q)
     {
         int finishTime = 0;
         int startTime;
         Process p;
         Process scheduled;
         Process remaining;
-        Scheduler.Stats stats = this.getStats();
+        Util.Stats stats = this.getStats();
         Queue<Process> scheduledQueue = new LinkedList<>();
         
 
@@ -112,7 +112,7 @@ public class ShortestRemainingTime extends Scheduler
         }        
         stats.addQuanta(finishTime);
         printTimeChart(scheduledQueue);
-        printRoundAvgStats();
+        printRoundAvg();
         stats.nextRound();
         
         return scheduledQueue;

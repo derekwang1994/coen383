@@ -3,13 +3,13 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 /**
- * Extends Scheduler as a First Come First Served algorithm
+ * Extends Util as a First Come First Served algorithm
  * Reads a PriorityQueue<Process>, schedules it, and returns a new Queue<Process>
  */
-public class FirstComeFirstServed extends Scheduler
+public class FirstComeFirstServed extends Util
 {
     @Override
-    public Queue<Process> schedule(PriorityQueue<Process> queue)
+    public Queue<Process> util(PriorityQueue<Process> queue)
     {
         int startTime;
         int finishTime = 0;
@@ -34,7 +34,7 @@ public class FirstComeFirstServed extends Scheduler
         }
         stats.addQuanta(finishTime);
         printTimeChart(processQueue);
-        printRoundAvgStats();
+        printRoundAvg();
         stats.nextRound();
         
         return processQueue;
