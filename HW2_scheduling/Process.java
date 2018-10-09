@@ -6,7 +6,6 @@
 public class Process implements Cloneable, Comparable
 {   
     @Override
-    /* Implement comparable so that we can put these in a priority queue */
     public int compareTo(Object o)
     {
         Process p = (Process) o;
