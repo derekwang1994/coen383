@@ -7,14 +7,6 @@ import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Extends Scheduler as a ShortestRemainingTime algorithm
- * which schedules based on shortest remaining and uses FCFS as a tiebreaker
- * Preempts a running process if a shorter job comes in, but allows the current
- * process to finish if they have the same runtime
- * Reads a PriorityQueue<Process>, schedules it, and returns a new Queue<Process>
- * @author Michael Riha
- */
 public class ShortestRemainingTime extends Scheduler 
 {    
     @Override
@@ -28,20 +20,16 @@ public class ShortestRemainingTime extends Scheduler
         Scheduler.Stats stats = this.getStats();
         Queue<Process> scheduledQueue = new LinkedList<>();
         
-        // Need to keep track of these to calculate turnaround and wait times
+
         Map<Character, Integer> startTimes = new HashMap<>();
         Map<Character, Integer> finishTimes = new HashMap<>();
-        
-        // Queue processes that are ready to run, and order by shortest run time
-        // break ties with arrival time so they are readied in the correct order
+
         PriorityQueue<Process> readyQueue = new PriorityQueue<>(10, 
-            new Comparator()
+            new Comparator<Process>()
             {
                 @Override
-                public int compare(Object o1, Object o2) 
+                public int compare(Process p1, Process p2)
                 {
-                    Process p1 = (Process) o1;
-                    Process p2 = (Process) o2;
                     if (p1.getBurstTime() == p2.getBurstTime())
                         return p1.getArrivalTime() <= p2.getArrivalTime() ? -1 : 1;
                     else
@@ -49,15 +37,13 @@ public class ShortestRemainingTime extends Scheduler
                 }            
             });
         
-        // Queue processes that are waiting to run by priority and remaining time
+
         PriorityQueue<Process> waitingQueue = new PriorityQueue<>(10, 
-            new Comparator()
+            new Comparator<Process>()
             {
                 @Override
-                public int compare(Object o1, Object o2) 
+                public int compare(Process p1, Process p2)
                 {
-                    Process p1 = (Process) o1;
-                    Process p2 = (Process) o2;
                     if (p1.getBurstTime() == p2.getBurstTime())
                         return p1.getArrivalTime() <= p2.getArrivalTime() ? -1 : 1;
                     else
@@ -67,12 +53,12 @@ public class ShortestRemainingTime extends Scheduler
         
         while (!q.isEmpty() || !readyQueue.isEmpty() || !waitingQueue.isEmpty())
         {
-            // add processes that have arrived by now to the ready queue
+
             while (!q.isEmpty() && q.peek().getArrivalTime() <= finishTime)
                 readyQueue.add(q.poll());
             
-            // Get the process with the shortest remaining time that can start now
-            // Break ties Waiting > Ready > Q to prioritize already running process 
+
+            //顺序：Waiting > Ready > Q
             if (readyQueue.isEmpty())
                 p = (waitingQueue.isEmpty()) ? q.poll() : waitingQueue.poll();
             else if (waitingQueue.isEmpty())
@@ -81,12 +67,11 @@ public class ShortestRemainingTime extends Scheduler
                 p = (readyQueue.peek().getBurstTime() < waitingQueue.peek().getBurstTime()) 
                   ? readyQueue.poll()
                   : waitingQueue.poll();
-            
-            // Assign p one time slice for now
+
             startTime = Math.max((int) Math.ceil(p.getArrivalTime()), finishTime);
             finishTime = startTime + 1;
             
-            // Record some stats if we haven't seen this process before
+
             if (!startTimes.containsKey(p.getName()))
             {
                 if (startTime > 100)
@@ -95,10 +80,10 @@ public class ShortestRemainingTime extends Scheduler
                 stats.addWaitTime(startTime - p.getArrivalTime());
                 stats.addResponseTime(startTime - p.getArrivalTime() + 1);
             }
-            else // add the wait time this process was in waitingQueue
+            else
                 stats.addWaitTime(startTime - finishTimes.get(p.getName()));
             
-            // split p into a second process with n-1 time slices and add to waiting queue
+
             if (p.getBurstTime() > 1)
             {
                 try 
@@ -113,19 +98,19 @@ public class ShortestRemainingTime extends Scheduler
                     Logger.getLogger(NonpreemptiveHighestPriorityFirstNoAging.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            else // this process finished so record turnaround time
+            else
             {
                 stats.addTurnaroundTime(finishTime - startTimes.get(p.getName()));
                 stats.addProcess();
             }            
-            // Create a new process with the calculated start time and add to a new queue
+
             scheduled = new Process();
             scheduled.setBurstTime(1);
             scheduled.setStartTime(startTime);
             scheduled.setName(p.getName());
             scheduledQueue.add(scheduled);            
         }        
-        stats.addQuanta(finishTime); // Add the total quanta to finish all jobs
+        stats.addQuanta(finishTime);
         printTimeChart(scheduledQueue);
         printRoundAvgStats();
         stats.nextRound();

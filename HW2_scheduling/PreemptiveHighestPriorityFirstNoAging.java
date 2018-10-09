@@ -7,13 +7,6 @@ import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Extends Scheduler as a Preemptive highest priority first algorithm w/o aging
- * which schedules based on priority and uses round robin within priority levels
- * Reads a PriorityQueue<Process>, schedules it, and returns a new Queue<Process>
- * @author Michael Riha
- */
-
 public class PreemptiveHighestPriorityFirstNoAging extends Scheduler 
 {    
     @Override
@@ -26,50 +19,41 @@ public class PreemptiveHighestPriorityFirstNoAging extends Scheduler
         Process remaining;
         Scheduler.Stats stats = this.getStats();
         Queue<Process> scheduledQueue = new LinkedList<>();
-        
-        // Need to keep track of these to calculate turnaround and wait times
+
         Map<Character, Integer> startTimes = new HashMap<>();
         Map<Character, Integer> finishTimes = new HashMap<>();
-        
-        // Queue processes that are ready to run, and order by shortest run time
-        // break ties with arrival time so they are readied in the correct order
+
         PriorityQueue<Process> readyQueue = new PriorityQueue<>(10, 
-            new Comparator()
+            new Comparator<Process>()
             {
                 @Override
-                public int compare(Object o1, Object o2) 
+                public int compare(Process p1, Process p2)
                 {
-                    Process p1 = (Process) o1;
-                    Process p2 = (Process) o2;
                     if (p1.getPriority() == p2.getPriority())
                         return p1.getArrivalTime() < p2.getArrivalTime() ? -1 : 1;
                     else
                         return p1.getPriority() < p2.getPriority() ? -1 : 1;
                 }            
             });
-        
-        // Queue processes that are waiting to run by priority ONLY so that they
-        // are switched correctly in round robin
+
+        //按照priority排序。保证在round robin中的顺序
         PriorityQueue<Process> waitingQueue = new PriorityQueue<>(10, 
-            new Comparator()
+            new Comparator<Process>()
             {
                 @Override
-                public int compare(Object o1, Object o2) 
+                public int compare(Process p1, Process p2)
                 {
-                    Process p1 = (Process) o1;
-                    Process p2 = (Process) o2;
                     return p1.getPriority() < p2.getPriority() ? -1 : 1;
                 }            
             });
         
         while (!q.isEmpty() || !readyQueue.isEmpty() || !waitingQueue.isEmpty())
         {
-            // add processes that have arrived by now to the ready queue
+            //加入process 到ready queue中
             while (!q.isEmpty() && q.peek().getArrivalTime() <= finishTime)
                 readyQueue.add(q.poll());
-            
-            // Get the process with the highest priority that can start now
-            // Order readyQueue > waitingQueue > q to ensure round robin fairness     
+
+            //选择priority最高的process开始。顺序是readyQueue > waitintQueue > q; 即就绪队列 > 等待队列 > 待处理队列(不知道叫什么)
             if (readyQueue.isEmpty())
                 p = (waitingQueue.isEmpty()) ? q.poll() : waitingQueue.poll();
             else if (waitingQueue.isEmpty())            
@@ -79,11 +63,12 @@ public class PreemptiveHighestPriorityFirstNoAging extends Scheduler
                   ? readyQueue.poll()
                   : waitingQueue.poll();
             
-            // Assign p one time slice for now
+            //update startTime, finishTime
             startTime = Math.max((int) Math.ceil(p.getArrivalTime()), finishTime);
             finishTime = startTime + 1;
-            
-            // Record some stats if we haven't seen this process before
+
+
+            //遇到没有见过的任务
             if (!startTimes.containsKey(p.getName()))
             {
                 if (startTime > 100)
@@ -91,11 +76,9 @@ public class PreemptiveHighestPriorityFirstNoAging extends Scheduler
                 startTimes.put(p.getName(), startTime);
                 stats.addWaitTime(startTime - p.getArrivalTime());
                 stats.addResponseTime(startTime - p.getArrivalTime() + 1);
-            }
-            else // add the wait time this process was in waitingQueue
+            }else // add the wait time this process was in waitingQueue
                 stats.addWaitTime(startTime - finishTimes.get(p.getName()));
-            
-            // split p into a second process with n-1 time slices and add to waiting queue
+
             if (p.getBurstTime() > 1)
             {
                 try 
