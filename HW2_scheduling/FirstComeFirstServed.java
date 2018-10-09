@@ -5,51 +5,54 @@ import java.util.PriorityQueue;
 /**
  * Extends Scheduler as a First Come First Served algorithm
  * Reads a PriorityQueue<Process>, schedules it, and returns a new Queue<Process>
- * @author Michael Riha
  */
 public class FirstComeFirstServed extends Scheduler
 {
     @Override
-    public Queue<Process> schedule(PriorityQueue<Process> q) 
+    public Queue<Process> schedule(PriorityQueue<Process> queue)
     {
-        int startTime = 0; // the current time slice
-        int queueSize = q.size();
+        int startTime;
         int finishTime = 0;
-        Process p;
+        int queueSize = queue.size();
+        Process process;
         Process scheduled;
         Stats stats = this.getStats();
-        Queue<Process> scheduledQueue = new LinkedList<>();
+        Queue<Process> processQueue = new LinkedList<>();
         
         for (int i = 0; i < queueSize; ++i)
         {
-            p = q.poll(); // MUST BE POLLED SEPARATELY for PriorityQueue to update
-                          // for (Process p : q) will give the wrong order!
+            process = queue.remove();
+            startTime = Math.max((int) Math.ceil(process.getArrivalTime()), finishTime);
+            finishTime = startTime + process.getBurstTime();
             
-            startTime = Math.max((int) Math.ceil(p.getArrivalTime()), finishTime);            
-            finishTime = startTime + p.getBurstTime();
-            
-            // Don't start any processes after 100 time slices
-            if (startTime > 100) 
+            if (startTime > 100)
                 break;
-            
-            // Record the statistics for this process
-            stats.addWaitTime(startTime - p.getArrivalTime());
-            stats.addTurnaroundTime(finishTime - p.getArrivalTime());
-            stats.addResponseTime(finishTime - startTime);
-            stats.addProcess();                      
 
-            // Create a new process with the calculated start time and add to a new queue
-            scheduled = new Process();
-            scheduled.setBurstTime(p.getBurstTime());
-            scheduled.setStartTime(startTime);
-            scheduled.setName(p.getName());
-            scheduledQueue.add(scheduled);            
+            statsState(startTime, finishTime, process, stats);
+            scheduled = setScheduled(startTime, process);
+            processQueue.add(scheduled);
         }
-        stats.addQuanta(finishTime); // Add the total quanta to finish all jobs
-        printTimeChart(scheduledQueue);
+        stats.addQuanta(finishTime);
+        printTimeChart(processQueue);
         printRoundAvgStats();
         stats.nextRound();
         
-        return scheduledQueue;
+        return processQueue;
+    }
+
+    private Process setScheduled(int startTime, Process process) {
+        Process scheduled;
+        scheduled = new Process();
+        scheduled.setBurstTime(process.getBurstTime());
+        scheduled.setStartTime(startTime);
+        scheduled.setName(process.getName());
+        return scheduled;
+    }
+
+    private void statsState(int startTime, int finishTime, Process process, Stats stats) {
+        stats.addWaitTime(startTime - process.getArrivalTime());
+        stats.addTurnaroundTime(finishTime - process.getArrivalTime());
+        stats.addResponseTime(finishTime - startTime);
+        stats.addProcess();
     }
 }

@@ -3,76 +3,73 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-/*******************************************************************
- * Extends Scheduler as a Non-preemptive highest priority first algorithm w/o aging
- * which schedules based on priority and allows process to finish even if a higher
- * priority process has become ready to run
- * Reads a PriorityQueue<Process>, schedules it, and returns a new Queue<Process>
- * @author Michael Riha
- * *****************************************************************/
-
 public class NonpreemptiveHighestPriorityFirstNoAging extends Scheduler 
 {    
     @Override
-    public Queue<Process> schedule(PriorityQueue<Process> q) 
+    public Queue<Process> schedule(PriorityQueue<Process> priorityQueue)
     {
         int finishTime = 0;
         int startTime;
-        Process p;
+        Process process;
         Process scheduled;
         Scheduler.Stats stats = this.getStats();
         Queue<Process> scheduledQueue = new LinkedList<>();
-        
-        // Queue processes that are ready to run, and order by shortest run time
-        // break ties with arrival time so they are readied in the correct order
-        PriorityQueue<Process> readyQueue = new PriorityQueue<>(10, 
-            new Comparator()
-            {
-                @Override
-                public int compare(Object o1, Object o2) 
-                {
-                    Process p1 = (Process) o1;
-                    Process p2 = (Process) o2;
-                    if (p1.getPriority() == p2.getPriority())
-                        return p1.getArrivalTime() < p2.getArrivalTime() ? -1 : 1;
-                    else
-                        return p1.getPriority() < p2.getPriority() ? -1 : 1;
-                }            
-            });
-        
-        while (!q.isEmpty() || !readyQueue.isEmpty())
+
+        PriorityQueue<Process> readyQueue = createReadyQueue();
+
+        while (!priorityQueue.isEmpty() || !readyQueue.isEmpty())
         {
-            // add processes that have arrived by now to the ready queue
-            while (!q.isEmpty() && q.peek().getArrivalTime() <= finishTime)
-                readyQueue.add(q.poll());
+            while (!priorityQueue.isEmpty() && priorityQueue.peek().getArrivalTime() <= finishTime)
+                readyQueue.add(priorityQueue.poll());
+            process = readyQueue.isEmpty() ? priorityQueue.poll() : readyQueue.poll();
+            startTime = Math.max((int) Math.ceil(process.getArrivalTime()), finishTime);
+            finishTime = startTime + process.getBurstTime();
             
-            p = readyQueue.isEmpty() ? q.poll() : readyQueue.poll();
-            
-            startTime = Math.max((int) Math.ceil(p.getArrivalTime()), finishTime);            
-            finishTime = startTime + p.getBurstTime();
-            
-            // Don't start any processes after 100 time slices
-            if (startTime > 100) 
+            if (startTime > 100)
                 break;
             
-            // Record the statistics for this process
-            stats.addWaitTime(startTime - p.getArrivalTime());
-            stats.addTurnaroundTime(finishTime - p.getArrivalTime());
-            stats.addResponseTime(finishTime - startTime);
-            stats.addProcess();                     
-
-            // Create a new process with the calculated start time and add to a new queue
-            scheduled = new Process();
-            scheduled.setBurstTime(p.getBurstTime());
-            scheduled.setStartTime(startTime);
-            scheduled.setName(p.getName());
+            recordStatistics(finishTime, startTime, process, stats);
+            scheduled = createNewProcess(startTime, process);
             scheduledQueue.add(scheduled);              
         }        
-        stats.addQuanta(finishTime); // Add the total quanta to finish all jobs
+        stats.addQuanta(finishTime);
         printTimeChart(scheduledQueue);
         printRoundAvgStats();
         stats.nextRound();
         
         return scheduledQueue;
+    }
+
+    private PriorityQueue<Process> createReadyQueue() {
+        return new PriorityQueue<>(10,
+                new Comparator()
+                {
+                    @Override
+                    public int compare(Object o1, Object o2)
+                    {
+                        Process p1 = (Process) o1;
+                        Process p2 = (Process) o2;
+                        if (p1.getPriority() == p2.getPriority())
+                            return p1.getArrivalTime() < p2.getArrivalTime() ? -1 : 1;
+                        else
+                            return p1.getPriority() < p2.getPriority() ? -1 : 1;
+                    }
+                });
+    }
+
+    private Process createNewProcess(int startTime, Process process) {
+        Process scheduled;
+        scheduled = new Process();
+        scheduled.setBurstTime(process.getBurstTime());
+        scheduled.setStartTime(startTime);
+        scheduled.setName(process.getName());
+        return scheduled;
+    }
+
+    private void recordStatistics(int finishTime, int startTime, Process process, Stats stats) {
+        stats.addWaitTime(startTime - process.getArrivalTime());
+        stats.addTurnaroundTime(finishTime - process.getArrivalTime());
+        stats.addResponseTime(finishTime - startTime);
+        stats.addProcess();
     }
 }
