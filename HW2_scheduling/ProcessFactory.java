@@ -19,7 +19,7 @@ public class ProcessFactory
         
         double nextArrival = 0.0;
 
-        for(int i = 0; i != processCount && nextArrival < 95; ++i)
+        for(int i = 0; i != processCount && nextArrival < 100; ++i)
         {		
             Process p = new Process();
             p.setArrivalTime(nextArrival); 
